@@ -1,8 +1,10 @@
 package controllers;
 
+import api.TagResponse;
 import api.ReceiptResponse;
 import dao.ReceiptDao;
 import dao.TagDao;
+import generated.tables.records.TagsRecord;
 import generated.tables.records.ReceiptsRecord;
 
 import javax.ws.rs.*;
@@ -45,5 +47,13 @@ public class tagController {
         List<ReceiptsRecord> receiptRecords = tags.findAllReceiptsTag(TagToSearch);
 
         return receiptRecords.stream().map(ReceiptResponse::new).collect(toList());
+    }
+
+    @GET
+    @Path("/get-tags")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List getTags() {
+        List<TagsRecord> tagRecords = tags.getAllTheTags();
+        return tagRecords.stream().map(TagResponse::new).collect(toList());
     }
 }

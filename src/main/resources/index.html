@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script data-require="jquery@*" data-semver="3.1.1" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <style>
+        #container {border: 1px solid brown;}
+        H1 {float: left;}
+
+        .button{
+            background-color:#55A;
+            border: 1px solid #229;
+            width: 100px;
+            float: right;
+            font-size: 2em;
+            color: white;
+            text-align: center;
+        }
+
+        #receiptList {
+            border: 1px solid green;
+            clear: both;
+        }
+
+        .receipt {
+            background-color: #eee;
+            margin-bottom: 5px;
+        }
+
+    </style>
+    <script type="text/javascript">
+        function getreceipts(){
+            $( "#receiptList" ).empty();
+            $.getJSON("/receipts", function(receipts) {
+                $.getJSON("/tags/get-tags", function(tags) {
+                    for(var x=0; x < receipts.length; x++) {
+                        var receipt = receipts[x];
+                        var idfortags = "tags-for-receipt-id-" + receipt.id;
+                        $(`<div class="receipt"><div >${receipt.created}</div><div class="merchant">${receipt.merchantName}</div><div class="amount ">${receipt.value}</div><div  id=${idfortags}><button class="add-tag" onclick="addtag('${idfortags},${receipt.id}')">add +</button></div></div>`)
+                            .appendTo($("#receiptList"));
+
+                        for(var i=0; i < tags.length; i++) {
+                            if (tags[i].receipt_id === receipt.id) {
+                                var idName = "#tags-for-receipt-id-" + receipt.id;
+                                $(`<div class="tagValue tags" onclick="addordeletetag('${tags[i].tag},${receipt.id}')">${tags[i].tag}</div>`).appendTo(idName);
+
+                            }
+                        }
+                    }});
+            });
+            showhidereceiptform(false);
+        }
+
+        function showhidereceiptform(show) {
+            if (show) {
+                $(".create-receipt-form").show();
+            } else {
+                $('#amount').val('');
+                $('#merchant').val('');
+                $(".create-receipt-form").hide();
+            }
+        }
+
+        function addtag(idAndReceiptId) {
+            var tagelement = document.createElement("input");
+            tagelement.setAttribute('type', 'text');
+            tagelement.setAttribute('class', 'tag_input');
+            $('#' + idAndReceiptId.split(',')[0]).append(tagelement);
+            var taginputbox = document.getElementsByClassName('tag_input');
+            taginputbox[0].addEventListener('keypress', function(e){
+                if (e.keyCode === 13) {
+                    addordeletetag($('.tag_input')[0].value + ',' + idAndReceiptId.split(',')[1]);
+                }
+            });
+        }
+
+        function addordeletetag(tag) {
+            $.ajax({
+                type: 'PUT',
+                url: '/tags/' + tag.split(',')[0],
+                data: tag.split(',')[1],
+                contentType: "application/json",
+                success : getreceipts
+            });
+        }
+
+        function createreceipt() {
+            var receiptvalues = {
+                "merchant": $('#merchant').val(),
+                "amount": $('#amount').val()
+            };
+
+            if($('#merchant').val() !== "") {
+                $.ajax({
+                    type: 'POST',
+                    url: '/receipts',
+                    data: JSON.stringify(receiptvalues),
+                    contentType: "application/json",
+                    dataType: 'json',
+                    success: getreceipts
+                });
+            }
+        }
+
+        getreceipts();
+    </script>
+</head>
+<body>
+<DIV id="container">
+    <div>
+        <h1>My receipts</h1>
+        <button class="button" id="add-receipt" onclick="showhidereceiptform(true)">+</button>
+    </div>
+    <table border = "1" width="100%">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Merchant</th>
+                <th>$</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+    </table>
+    <div id="receiptList">
+    </div>
+    <div class="create-receipt-form">
+        <input title="merchant" id="merchant"/>
+        <input title="amount" id="amount"/>
+        <button id="cancel-receipt" onclick="showhidereceiptform(false)">Cancel</button>
+        <button id="save-receipt" onclick="createreceipt()">Save</button>
+    </div>
+</DIV>
+</body>
+</html>

@@ -41,5 +41,11 @@ public class TagDao {
                 .where(TAGS.TAG.eq(TagToSearch))
                 .fetchInto(ReceiptsRecord.class);
     }
+
+    public List<TagsRecord> getAllTheTags() {
+        return dsl.select()
+                .from(TAGS)
+                .fetchInto(TagsRecord.class);
+    }
 }
 
